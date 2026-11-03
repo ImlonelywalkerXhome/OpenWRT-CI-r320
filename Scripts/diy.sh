@@ -48,11 +48,11 @@ set_config() {
 # 我们不用 globitel-bt-r320 设备，直接删除该 patch。
 # 上游修复后此 hook 会自然 no-op（文件不存在则跳过）。
 # =======================================================
-BROKEN_UBOOT_PATCH="package/boot/uboot-mediatek/patches/472-add-globitel-bt-r320.patch"
-if [ -f "$BROKEN_UBOOT_PATCH" ]; then
-    echo "[upstream-fix] 删除格式损坏的 $BROKEN_UBOOT_PATCH"
-    rm -f "$BROKEN_UBOOT_PATCH"
-fi
+# BROKEN_UBOOT_PATCH="package/boot/uboot-mediatek/patches/472-add-globitel-bt-r320.patch"
+# if [ -f "$BROKEN_UBOOT_PATCH" ]; then
+#     echo "[upstream-fix] 删除格式损坏的 $BROKEN_UBOOT_PATCH"
+#     rm -f "$BROKEN_UBOOT_PATCH"
+# fi
 
 # The upstream NFT_BRIDGE package map duplicates this module. Keep its standalone
 # package dependency while avoiding two packages claiming the same .ko file.
@@ -89,217 +89,217 @@ fi
 # - FIP / BL2 / U-Boot 的构建在独立项目 https://github.com/ysuolmai/UBOOT-CI
 #   这里只产 sysupgrade.bin / factory.bin，不掺和 U-Boot
 # =======================================================
-SX7981_DTS_SRC="${GITHUB_WORKSPACE}/Scripts/dts/mt7981b-sx-7981r128.dts"
-SX7981_FILOGIC_MK="target/linux/mediatek/image/filogic.mk"
-SX7981_UBOOT_ENVTOOLS="package/boot/uboot-tools/uboot-envtools/files/mediatek_filogic"
-SX7981_SMP_SH="package/mtk/applications/mtk-smp/files/smp.sh"
+# SX7981_DTS_SRC="${GITHUB_WORKSPACE}/Scripts/dts/mt7981b-sx-7981r128.dts"
+# SX7981_FILOGIC_MK="target/linux/mediatek/image/filogic.mk"
+# SX7981_UBOOT_ENVTOOLS="package/boot/uboot-tools/uboot-envtools/files/mediatek_filogic"
+# SX7981_SMP_SH="package/mtk/applications/mtk-smp/files/smp.sh"
 
-if [[ "$WRT_CONFIG" == "MEDIATEK-"* || "$WRT_CONFIG" == "MTK-"* ]] && \
-   [ -f "$SX7981_DTS_SRC" ] && [ -d "target/linux/mediatek/dts" ]; then
-    echo "================================================================"
-    echo "[device-add] 注入 SX 7981R128 设备支持..."
+# if [[ "$WRT_CONFIG" == "MEDIATEK-"* || "$WRT_CONFIG" == "MTK-"* ]] && \
+#    [ -f "$SX7981_DTS_SRC" ] && [ -d "target/linux/mediatek/dts" ]; then
+#     echo "================================================================"
+#     echo "[device-add] 注入 SX 7981R128 设备支持..."
 
-    # 1. 复制 DTS
-    cp -f "$SX7981_DTS_SRC" target/linux/mediatek/dts/
-    echo "[device-add]   DTS 已复制到 target/linux/mediatek/dts/"
+#     # 1. 复制 DTS
+#     cp -f "$SX7981_DTS_SRC" target/linux/mediatek/dts/
+#     echo "[device-add]   DTS 已复制到 target/linux/mediatek/dts/"
 
-    # 2. 追加设备到 filogic.mk（幂等：已存在则跳过）
-    if [ -f "$SX7981_FILOGIC_MK" ] && ! grep -q '^define Device/sx_7981r128' "$SX7981_FILOGIC_MK"; then
-        cat >> "$SX7981_FILOGIC_MK" << 'FILOGIC_EOF'
+#     # 2. 追加设备到 filogic.mk（幂等：已存在则跳过）
+#     if [ -f "$SX7981_FILOGIC_MK" ] && ! grep -q '^define Device/sx_7981r128' "$SX7981_FILOGIC_MK"; then
+#         cat >> "$SX7981_FILOGIC_MK" << 'FILOGIC_EOF'
 
-define Device/sx_7981r128
-  DEVICE_VENDOR := SX
-  DEVICE_MODEL := 7981R128
-  DEVICE_DTS := mt7981b-sx-7981r128
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 \
-                     kmod-sfp kmod-i2c-gpio automount f2fsck mkf2fs uboot-envtools
-  # 第一项 = 新 DTS 的 compatible 第一字段（运行时 board_name）
-  # 第二项 = hanwckf 老固件 board name，允许从老固件直接 sysupgrade 过来
-  # 第三项 = JimLee1996 rebase 仓库同硬件 board name，允许互刷 sysupgrade
-  # 第四项 = 上游最终合并的 zhao,7981r128 board name，允许互刷 sysupgrade
-  SUPPORTED_DEVICES := sx,7981r128 mediatek,mt7981-spim-snand-7981r128 \
-                       mediatek,zhao-7981r128-d zhao,7981r128
-  KERNEL_IN_UBI := 1
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  IMAGE_SIZE := 114688k
-  UBINIZE_OPTS := -E 5
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-endef
-TARGET_DEVICES += sx_7981r128
-FILOGIC_EOF
-        echo "[device-add]   设备条目已追加到 filogic.mk"
-    else
-        echo "[device-add]   设备条目已存在，跳过追加"
-    fi
+# define Device/sx_7981r128
+#   DEVICE_VENDOR := SX
+#   DEVICE_MODEL := 7981R128
+#   DEVICE_DTS := mt7981b-sx-7981r128
+#   DEVICE_DTS_DIR := ../dts
+#   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 \
+#                      kmod-sfp kmod-i2c-gpio automount f2fsck mkf2fs uboot-envtools
+#   # 第一项 = 新 DTS 的 compatible 第一字段（运行时 board_name）
+#   # 第二项 = hanwckf 老固件 board name，允许从老固件直接 sysupgrade 过来
+#   # 第三项 = JimLee1996 rebase 仓库同硬件 board name，允许互刷 sysupgrade
+#   # 第四项 = 上游最终合并的 zhao,7981r128 board name，允许互刷 sysupgrade
+#   SUPPORTED_DEVICES := sx,7981r128 mediatek,mt7981-spim-snand-7981r128 \
+#                        mediatek,zhao-7981r128-d zhao,7981r128
+#   KERNEL_IN_UBI := 1
+#   BLOCKSIZE := 128k
+#   PAGESIZE := 2048
+#   IMAGE_SIZE := 114688k
+#   UBINIZE_OPTS := -E 5
+#   IMAGES += factory.bin
+#   IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+#   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+# endef
+# TARGET_DEVICES += sx_7981r128
+# FILOGIC_EOF
+#         echo "[device-add]   设备条目已追加到 filogic.mk"
+#     else
+#         echo "[device-add]   设备条目已存在，跳过追加"
+#     fi
 
-    # 3. 注入 board.d/02_network 配置
-    #    端口分配：lan1（千兆）→ br-lan，lan2（2.5G EN8801SC）→ WAN
-    #    eth1（SFP 笼）通过 uci-defaults 配置为 wan2
-    #    没有这个配置，OpenWrt 会走默认 *) 分支，端口不能正常工作
-    BOARD_NETWORK="target/linux/mediatek/filogic/base-files/etc/board.d/02_network"
-    if [ -f "$BOARD_NETWORK" ] && ! grep -q 'sx,7981r128' "$BOARD_NETWORK"; then
-        awk '
-            /^mediatek_setup_interfaces\(\)$/ { in_interfaces = 1 }
-            in_interfaces && !done && /^\t\*\)$/ {
-                print "\tsx,7981r128)"
-                print "\t\tucidef_set_interfaces_lan_wan \"lan1\" \"lan2\""
-                print "\t\t;;"
-                done = 1
-            }
-            /^mediatek_setup_macs\(\)$/ { in_macs = 1 }
-            in_macs && !mac_done && /^\tesac$/ {
-                print "\tsx,7981r128)"
-                print "\t\tlan_mac=$(mtd_get_mac_binary factory 0x04)"
-                print "\t\t[ -n \"$lan_mac\" ] || lan_mac=$(mtd_get_mac_binary Factory 0x04)"
-                print "\t\twan_mac=$(macaddr_add \"$lan_mac\" 1)"
-                print "\t\tlabel_mac=$lan_mac"
-                print "\t\t;;"
-                mac_done = 1
-            }
-            { print }
-        ' "$BOARD_NETWORK" > "$BOARD_NETWORK.new" && mv "$BOARD_NETWORK.new" "$BOARD_NETWORK"
-        echo "[device-add]   02_network 接口/MAC case 已注入"
-    fi
+#     # 3. 注入 board.d/02_network 配置
+#     #    端口分配：lan1（千兆）→ br-lan，lan2（2.5G EN8801SC）→ WAN
+#     #    eth1（SFP 笼）通过 uci-defaults 配置为 wan2
+#     #    没有这个配置，OpenWrt 会走默认 *) 分支，端口不能正常工作
+#     BOARD_NETWORK="target/linux/mediatek/filogic/base-files/etc/board.d/02_network"
+#     if [ -f "$BOARD_NETWORK" ] && ! grep -q 'sx,7981r128' "$BOARD_NETWORK"; then
+#         awk '
+#             /^mediatek_setup_interfaces\(\)$/ { in_interfaces = 1 }
+#             in_interfaces && !done && /^\t\*\)$/ {
+#                 print "\tsx,7981r128)"
+#                 print "\t\tucidef_set_interfaces_lan_wan \"lan1\" \"lan2\""
+#                 print "\t\t;;"
+#                 done = 1
+#             }
+#             /^mediatek_setup_macs\(\)$/ { in_macs = 1 }
+#             in_macs && !mac_done && /^\tesac$/ {
+#                 print "\tsx,7981r128)"
+#                 print "\t\tlan_mac=$(mtd_get_mac_binary factory 0x04)"
+#                 print "\t\t[ -n \"$lan_mac\" ] || lan_mac=$(mtd_get_mac_binary Factory 0x04)"
+#                 print "\t\twan_mac=$(macaddr_add \"$lan_mac\" 1)"
+#                 print "\t\tlabel_mac=$lan_mac"
+#                 print "\t\t;;"
+#                 mac_done = 1
+#             }
+#             { print }
+#         ' "$BOARD_NETWORK" > "$BOARD_NETWORK.new" && mv "$BOARD_NETWORK.new" "$BOARD_NETWORK"
+#         echo "[device-add]   02_network 接口/MAC case 已注入"
+#     fi
 
-    # 4. 注入 board.d/01_leds 配置
-    BOARD_LEDS="target/linux/mediatek/filogic/base-files/etc/board.d/01_leds"
-    if [ -f "$BOARD_LEDS" ] && ! grep -q 'sx,7981r128' "$BOARD_LEDS"; then
-        awk '
-            !done && /^esac$/ {
-                print "\tsx,7981r128)"
-                print "\t\tucidef_set_led_netdev \"lan2\" \"LAN2\" \"green:lan\" \"lan2\" \"link tx rx\""
-                print "\t\tucidef_set_led_netdev \"sfp\" \"SFP\" \"green:wan\" \"eth1\" \"link tx rx\""
-                print "\t\tucidef_set_led_netdev \"wlan2g\" \"WIFI2G\" \"green:wlan-2ghz\" \"phy0-ap0\" \"link tx rx\""
-                print "\t\tucidef_set_led_netdev \"wlan5g\" \"WIFI5G\" \"green:wlan-5ghz\" \"phy1-ap0\" \"link tx rx\""
-                print "\t\t;;"
-                done = 1
-            }
-            { print }
-        ' "$BOARD_LEDS" > "$BOARD_LEDS.new" && mv "$BOARD_LEDS.new" "$BOARD_LEDS"
-        echo "[device-add]   01_leds case 已注入"
-    fi
+#     # 4. 注入 board.d/01_leds 配置
+#     BOARD_LEDS="target/linux/mediatek/filogic/base-files/etc/board.d/01_leds"
+#     if [ -f "$BOARD_LEDS" ] && ! grep -q 'sx,7981r128' "$BOARD_LEDS"; then
+#         awk '
+#             !done && /^esac$/ {
+#                 print "\tsx,7981r128)"
+#                 print "\t\tucidef_set_led_netdev \"lan2\" \"LAN2\" \"green:lan\" \"lan2\" \"link tx rx\""
+#                 print "\t\tucidef_set_led_netdev \"sfp\" \"SFP\" \"green:wan\" \"eth1\" \"link tx rx\""
+#                 print "\t\tucidef_set_led_netdev \"wlan2g\" \"WIFI2G\" \"green:wlan-2ghz\" \"phy0-ap0\" \"link tx rx\""
+#                 print "\t\tucidef_set_led_netdev \"wlan5g\" \"WIFI5G\" \"green:wlan-5ghz\" \"phy1-ap0\" \"link tx rx\""
+#                 print "\t\t;;"
+#                 done = 1
+#             }
+#             { print }
+#         ' "$BOARD_LEDS" > "$BOARD_LEDS.new" && mv "$BOARD_LEDS.new" "$BOARD_LEDS"
+#         echo "[device-add]   01_leds case 已注入"
+#     fi
 
-    # 5. 注入首次启动 uci-defaults
-    #    - 启用 WiFi（radio0/radio1 默认 disabled=1）
-    #    - 添加 wan2 接口（eth1，SFP 笼，DHCP）并加入防火墙 WAN zone
-    mkdir -p package/base-files/files/etc/uci-defaults
-    cat > package/base-files/files/etc/uci-defaults/98_sx_7981r128_init.sh << 'UCI_EOF'
-#!/bin/sh
-# 仅对 sx,7981r128 执行
-[ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "sx,7981r128" ] || exit 0
+#     # 5. 注入首次启动 uci-defaults
+#     #    - 启用 WiFi（radio0/radio1 默认 disabled=1）
+#     #    - 添加 wan2 接口（eth1，SFP 笼，DHCP）并加入防火墙 WAN zone
+#     mkdir -p package/base-files/files/etc/uci-defaults
+#     cat > package/base-files/files/etc/uci-defaults/98_sx_7981r128_init.sh << 'UCI_EOF'
+# #!/bin/sh
+# # 仅对 sx,7981r128 执行
+# [ "$(cat /tmp/sysinfo/board_name 2>/dev/null)" = "sx,7981r128" ] || exit 0
 
-. /lib/functions.sh
-. /lib/functions/system.sh
+# . /lib/functions.sh
+# . /lib/functions/system.sh
 
-# --- WiFi：启用双频射频 ---
-uci set wireless.radio0.disabled=0
-uci set wireless.radio1.disabled=0
-uci commit wireless
+# # --- WiFi：启用双频射频 ---
+# uci set wireless.radio0.disabled=0
+# uci set wireless.radio1.disabled=0
+# uci commit wireless
 
-# --- 网络：wan6（2.5G 主WAN，lan2，IPv6）+ wan2/wan2_6（SFP 笼，eth1）---
-# wan6 不由 ucidef_set_interfaces_lan_wan 自动创建，需手动补上
-uci set network.wan.metric=10
-uci set network.wan6=interface
-uci set network.wan6.device=lan2
-uci set network.wan6.proto=dhcpv6
-uci set network.wan6.metric=10
-uci set network.wan2=interface
-uci set network.wan2.device=eth1
-uci set network.wan2.proto=dhcp
-uci set network.wan2.metric=20
-uci set network.wan2_6=interface
-uci set network.wan2_6.device=eth1
-uci set network.wan2_6.proto=dhcpv6
-uci set network.wan2_6.metric=20
-base_mac=$(mtd_get_mac_binary factory 0x04 2>/dev/null)
-[ -n "$base_mac" ] || base_mac=$(mtd_get_mac_binary Factory 0x04 2>/dev/null)
-if [ -n "$base_mac" ]; then
-    uci set network.wan2.macaddr="$(macaddr_add "$base_mac" 2)"
-fi
-uci commit network
+# # --- 网络：wan6（2.5G 主WAN，lan2，IPv6）+ wan2/wan2_6（SFP 笼，eth1）---
+# # wan6 不由 ucidef_set_interfaces_lan_wan 自动创建，需手动补上
+# uci set network.wan.metric=10
+# uci set network.wan6=interface
+# uci set network.wan6.device=lan2
+# uci set network.wan6.proto=dhcpv6
+# uci set network.wan6.metric=10
+# uci set network.wan2=interface
+# uci set network.wan2.device=eth1
+# uci set network.wan2.proto=dhcp
+# uci set network.wan2.metric=20
+# uci set network.wan2_6=interface
+# uci set network.wan2_6.device=eth1
+# uci set network.wan2_6.proto=dhcpv6
+# uci set network.wan2_6.metric=20
+# base_mac=$(mtd_get_mac_binary factory 0x04 2>/dev/null)
+# [ -n "$base_mac" ] || base_mac=$(mtd_get_mac_binary Factory 0x04 2>/dev/null)
+# if [ -n "$base_mac" ]; then
+#     uci set network.wan2.macaddr="$(macaddr_add "$base_mac" 2)"
+# fi
+# uci commit network
 
-# --- 防火墙：将 wan2 加入 WAN zone ---
-wan_zone_idx=""
-i=0
-while uci get "firewall.@zone[$i]" >/dev/null 2>&1; do
-    if [ "$(uci get firewall.@zone[$i].name 2>/dev/null)" = "wan" ]; then
-        wan_zone_idx=$i
-        break
-    fi
-    i=$((i + 1))
-done
-if [ -n "$wan_zone_idx" ]; then
-    uci add_list firewall.@zone[$wan_zone_idx].network=wan2
-    uci add_list firewall.@zone[$wan_zone_idx].network=wan2_6
-    uci commit firewall
-fi
+# # --- 防火墙：将 wan2 加入 WAN zone ---
+# wan_zone_idx=""
+# i=0
+# while uci get "firewall.@zone[$i]" >/dev/null 2>&1; do
+#     if [ "$(uci get firewall.@zone[$i].name 2>/dev/null)" = "wan" ]; then
+#         wan_zone_idx=$i
+#         break
+#     fi
+#     i=$((i + 1))
+# done
+# if [ -n "$wan_zone_idx" ]; then
+#     uci add_list firewall.@zone[$wan_zone_idx].network=wan2
+#     uci add_list firewall.@zone[$wan_zone_idx].network=wan2_6
+#     uci commit firewall
+# fi
 
-exit 0
-UCI_EOF
-    chmod +x package/base-files/files/etc/uci-defaults/98_sx_7981r128_init.sh
-    echo "[device-add]   uci-defaults 98_sx_7981r128_init.sh 已注入"
+# exit 0
+# UCI_EOF
+#     chmod +x package/base-files/files/etc/uci-defaults/98_sx_7981r128_init.sh
+#     echo "[device-add]   uci-defaults 98_sx_7981r128_init.sh 已注入"
 
-    # 6. 注入 lib/upgrade/platform.sh 配置
-    #    参考 zhao_7981-r128-dsa-mtkuboot：sysupgrade-tar + ubi NAND 升级路径
-    PLATFORM_SH="target/linux/mediatek/filogic/base-files/lib/upgrade/platform.sh"
-    if [ -f "$PLATFORM_SH" ] && ! grep -q 'sx,7981r128' "$PLATFORM_SH"; then
-        awk '
-            /^platform_do_upgrade\(\) \{/ { in_upgrade = 1 }
-            in_upgrade && !upgrade_done && /^\t(jiorouter,ax6000-jidu6101|ruijie,rg-x30e-pro)\)$/ {
-                print "\tsx,7981r128|\\"
-                upgrade_done = 1
-            }
-            /^platform_check_image\(\) \{/ { in_upgrade = 0; in_check = 1 }
-            in_check && !check_done && /^\tnradio,c8-668gl\)$/ {
-                print "\tsx,7981r128|\\"
-                check_done = 1
-            }
-            { print }
-        ' "$PLATFORM_SH" > "$PLATFORM_SH.new" && mv "$PLATFORM_SH.new" "$PLATFORM_SH"
-        echo "[device-add]   platform.sh sysupgrade case 已注入"
-    fi
+#     # 6. 注入 lib/upgrade/platform.sh 配置
+#     #    参考 zhao_7981-r128-dsa-mtkuboot：sysupgrade-tar + ubi NAND 升级路径
+#     PLATFORM_SH="target/linux/mediatek/filogic/base-files/lib/upgrade/platform.sh"
+#     if [ -f "$PLATFORM_SH" ] && ! grep -q 'sx,7981r128' "$PLATFORM_SH"; then
+#         awk '
+#             /^platform_do_upgrade\(\) \{/ { in_upgrade = 1 }
+#             in_upgrade && !upgrade_done && /^\t(jiorouter,ax6000-jidu6101|ruijie,rg-x30e-pro)\)$/ {
+#                 print "\tsx,7981r128|\\"
+#                 upgrade_done = 1
+#             }
+#             /^platform_check_image\(\) \{/ { in_upgrade = 0; in_check = 1 }
+#             in_check && !check_done && /^\tnradio,c8-668gl\)$/ {
+#                 print "\tsx,7981r128|\\"
+#                 check_done = 1
+#             }
+#             { print }
+#         ' "$PLATFORM_SH" > "$PLATFORM_SH.new" && mv "$PLATFORM_SH.new" "$PLATFORM_SH"
+#         echo "[device-add]   platform.sh sysupgrade case 已注入"
+#     fi
 
-    # 7. 注入 uboot-envtools 配置
-    #    上游 zhao,7981r128 使用 /dev/mtd1 0x0 0x20000 0x20000，sx 同硬件沿用。
-    if [ -f "$SX7981_UBOOT_ENVTOOLS" ] && ! grep -q 'sx,7981r128' "$SX7981_UBOOT_ENVTOOLS"; then
-        awk '
-            !done && /^[[:space:]]*zhao,7981r128\)$/ {
-                print "\tsx,7981r128|\\"
-                done = 1
-            }
-            !done && /^[[:space:]]*zbtlink,zbt-z8103ax\)$/ {
-                sub(/\)$/, "|\\")
-                print
-                print "\tsx,7981r128)"
-                done = 1
-                next
-            }
-            { print }
-        ' "$SX7981_UBOOT_ENVTOOLS" > "$SX7981_UBOOT_ENVTOOLS.new" && mv "$SX7981_UBOOT_ENVTOOLS.new" "$SX7981_UBOOT_ENVTOOLS"
-        echo "[device-add]   uboot-envtools case 已注入"
-    fi
+#     # 7. 注入 uboot-envtools 配置
+#     #    上游 zhao,7981r128 使用 /dev/mtd1 0x0 0x20000 0x20000，sx 同硬件沿用。
+#     if [ -f "$SX7981_UBOOT_ENVTOOLS" ] && ! grep -q 'sx,7981r128' "$SX7981_UBOOT_ENVTOOLS"; then
+#         awk '
+#             !done && /^[[:space:]]*zhao,7981r128\)$/ {
+#                 print "\tsx,7981r128|\\"
+#                 done = 1
+#             }
+#             !done && /^[[:space:]]*zbtlink,zbt-z8103ax\)$/ {
+#                 sub(/\)$/, "|\\")
+#                 print
+#                 print "\tsx,7981r128)"
+#                 done = 1
+#                 next
+#             }
+#             { print }
+#         ' "$SX7981_UBOOT_ENVTOOLS" > "$SX7981_UBOOT_ENVTOOLS.new" && mv "$SX7981_UBOOT_ENVTOOLS.new" "$SX7981_UBOOT_ENVTOOLS"
+#         echo "[device-add]   uboot-envtools case 已注入"
+#     fi
 
-    # 8. 注入 mtk-smp 配置
-    #    MTK rebase 源存在该文件时，加入 7981R128 到 MT7981 WHNAT/SMP 分支。
-    if [ -f "$SX7981_SMP_SH" ] && ! grep -q 'sx,7981r128' "$SX7981_SMP_SH"; then
-        awk '
-            !done && /^\t\*7981\*\)$/ {
-                print "\tzhao,7981r128 |\\"
-                print "\tsx,7981r128 |\\"
-                done = 1
-            }
-            { print }
-        ' "$SX7981_SMP_SH" > "$SX7981_SMP_SH.new" && mv "$SX7981_SMP_SH.new" "$SX7981_SMP_SH"
-        echo "[device-add]   mtk-smp case 已注入"
-    fi
+#     # 8. 注入 mtk-smp 配置
+#     #    MTK rebase 源存在该文件时，加入 7981R128 到 MT7981 WHNAT/SMP 分支。
+#     if [ -f "$SX7981_SMP_SH" ] && ! grep -q 'sx,7981r128' "$SX7981_SMP_SH"; then
+#         awk '
+#             !done && /^\t\*7981\*\)$/ {
+#                 print "\tzhao,7981r128 |\\"
+#                 print "\tsx,7981r128 |\\"
+#                 done = 1
+#             }
+#             { print }
+#         ' "$SX7981_SMP_SH" > "$SX7981_SMP_SH.new" && mv "$SX7981_SMP_SH.new" "$SX7981_SMP_SH"
+#         echo "[device-add]   mtk-smp case 已注入"
+#     fi
 
-    echo "[device-add] 完成"
-    echo "================================================================"
-fi
+#     echo "[device-add] 完成"
+#     echo "================================================================"
+# fi
 
 # =======================================================
 # [section: package-sources] 安装和更新软件包
@@ -462,9 +462,9 @@ UPDATE_PACKAGE "luci-app-bandix" "timsaya/luci-app-bandix" "main"
 # =======================================================
 # [section: image-and-config] 固件标识和基础配置
 # =======================================================
-WRT_IP="192.168.1.1"
-WRT_NAME="FWRT"
-WRT_WIFI="FWRT"
+WRT_IP="192.168.5.1"
+WRT_NAME="QWRT"
+WRT_WIFI="QWRT"
 
 sed -i "s/192\.168\.[0-9]*\.[0-9]*/$WRT_IP/g" $(find ./feeds/luci/modules/luci-mod-system/ -type f -name "flash.js")
 
@@ -489,7 +489,7 @@ sed -i "s/hostname='.*'/hostname='$WRT_NAME'/g" $CFG_FILE
 # 里的设备一律显式设为 not set，避免 make defconfig 恢复默认设备。
 # 想多编几个设备就往 mtk_keep 里加（用 \| 分隔），名字对应
 # Config/MEDIATEK-WIFI-*.txt 里 CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xxx 的 xxx。
-mtk_keep="\(sx_7981r128\|nokia_ea0326gmp\|cmcc_rax3000m\)=y$"
+mtk_keep="\(globitel_bt-r320\)=y$"
 
 sed -i "/^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_/{
     /$mtk_keep/! s/^CONFIG_\([^=]*\)=.*/# CONFIG_\1 is not set/
@@ -603,7 +603,7 @@ provided_config_lines=(
     "CONFIG_PACKAGE_kmod-fs-cifs=y"
     "CONFIG_PACKAGE_cifsmount=y"
 	"CONFIG_PACKAGE_luci-theme-shadcn=y"
-    #"CONFIG_PACKAGE_luci-app-openclash=y"
+    "CONFIG_PACKAGE_luci-app-openclash=y"
 )
 
 if [[ $WRT_CONFIG == *"WIFI-NO"* ]]; then
@@ -670,9 +670,9 @@ fi
     "CONFIG_PACKAGE_kmod-sched-htb=y"
     "CONFIG_PACKAGE_tc-full=y"
     "CONFIG_PACKAGE_kmod-sched-netem=y"
-	#"CONFIG_PACKAGE_nikki=y"
-	#"CONFIG_PACKAGE_luci-app-nikki=y"
-	#"CONFIG_PACKAGE_luci-i18n-nikki-zh-cn=y"
+	"CONFIG_PACKAGE_nikki=y"
+	"CONFIG_PACKAGE_luci-app-nikki=y"
+	"CONFIG_PACKAGE_luci-i18n-nikki-zh-cn=y"
 	#"CONFIG_PACKAGE_luci-app-lucky=y"
 	#"CONFIG_PACKAGE_lucky=y"
     # =========================
@@ -1214,18 +1214,18 @@ PYEOF
     sed -i '/openclash/d; /passwall/d' .config
     echo "[ebpf] 已从 .config 移除 openclash / passwall 相关行"
 
-    # 3. 扩大 eMMC 设备内核分区
-    #    eBPF 包含字节码，编译产物比普通代理大，默认 6144k 不够
-    image_file='./target/linux/qualcommax/image/ipq60xx.mk'
-    if [ -f "$image_file" ]; then
-        sed -i "/^define Device\/emmc-common/,/^endef/ s/KERNEL_SIZE := 6144k/KERNEL_SIZE := 12288k/" "$image_file"
-        sed -i "/^define Device\/jdcloud_re-ss-01/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
-        sed -i "/^define Device\/jdcloud_re-cs-02/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
-        sed -i "/^define Device\/jdcloud_re-cs-07/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
-        sed -i "/^define Device\/link_nn6000-common/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
-        sed -i "/^define Device\/linksys_mr/,/^endef/ { /KERNEL_SIZE := 8192k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
-        echo "[ebpf] eMMC 内核分区已扩大至 12288k"
-    fi
+    # # 3. 扩大 eMMC 设备内核分区
+    # #    eBPF 包含字节码，编译产物比普通代理大，默认 6144k 不够
+    # image_file='./target/linux/qualcommax/image/ipq60xx.mk'
+    # if [ -f "$image_file" ]; then
+    #     sed -i "/^define Device\/emmc-common/,/^endef/ s/KERNEL_SIZE := 6144k/KERNEL_SIZE := 12288k/" "$image_file"
+    #     sed -i "/^define Device\/jdcloud_re-ss-01/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
+    #     sed -i "/^define Device\/jdcloud_re-cs-02/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
+    #     sed -i "/^define Device\/jdcloud_re-cs-07/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
+    #     sed -i "/^define Device\/link_nn6000-common/,/^endef/ { /KERNEL_SIZE := 6144k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
+    #     sed -i "/^define Device\/linksys_mr/,/^endef/ { /KERNEL_SIZE := 8192k/s//KERNEL_SIZE := 12288k/ }" "$image_file"
+    #     echo "[ebpf] eMMC 内核分区已扩大至 12288k"
+    # fi
 
     echo "[ebpf] eBPF 构建专项配置完成"
     echo "================================================================"
