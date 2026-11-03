@@ -63,7 +63,7 @@ cat Config/*.txt >> .config
 | UPDATE_PACKAGE | 安装/更新第三方包（poweroff、tailscale、gecoosac、openlist2、jell 批量、netspeedtest 等） |
 | provided_config_lines | 写入额外的 .config 配置项 |
 | pkg-fix 1/2/3 | iptables → kmod-nf-ipt/iptables-nft 依赖替换 |
-| 颜色/文件内置 | CSS 主色 → #31A1A1，安装 uci-defaults 脚本 |
+| 文件内置 | 安装 uci-defaults 脚本（主题与配色保持上游默认，仅由 WRT_THEME 选主题） |
 | Makefile 修复 | cmake、getifaddr、v2ray-geodata、rust patch 等 |
 
 ### Scripts/dts/mt7981b-sx-7981r128.dts

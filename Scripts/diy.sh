@@ -356,10 +356,17 @@ test -f package/luci-app-netbird/luci-app-netbird/Makefile || exit 1
 UPDATE_PACKAGE "luci-app-openlist2" "sbwml/luci-app-openlist2" "main"
 
 #small-package
+# 注意：不要在这里加 mosdns / luci-app-mosdns / v2dat。
+# mosdns 全套由 Packages.sh 的 sbwml/luci-app-mosdns(v5) 提供（同仓库内含 geo2txt），
+# 而本函数会先执行 find ... \( -name "$NAME" -o -name "luci-*-$NAME" \) -exec rm -rf，
+# NAME=mosdns 时 "luci-*-mosdns" 正好匹配 package/luci-app-mosdns 整个克隆目录，
+# 把 geo2txt 一起删掉；随后又只按 *mosdns* 提取 jell 的包，geo2txt 不会被复制，
+# 最终 luci-app-mosdns 的 +geo2txt 依赖无包可解，package/install 阶段报
+# "cannot find dependency geo2txt"。
 UPDATE_PACKAGE "xray-core xray-plugin dns2tcp dns2socks haproxy hysteria \
         naiveproxy v2ray-core v2ray-geodata v2ray-geoview v2ray-plugin \
         tuic-client chinadns-ng ipt2socks tcping trojan-plus simple-obfs shadowsocksr-libev \
-        luci-app-passwall smartdns luci-app-smartdns v2dat mosdns luci-app-mosdns \
+        luci-app-passwall smartdns luci-app-smartdns \
         taskd luci-lib-xterm luci-lib-taskd luci-app-passwall2 luci-app-ssr-plus shadowsocks-libev \
         luci-app-store quickstart luci-app-quickstart luci-app-istorex luci-app-cloudflarespeedtest \
         netdata luci-app-netdata \
@@ -558,8 +565,8 @@ for keyword in "${keywords_to_delete[@]}"; do
     sed -i "/$keyword/d" ./.config
 done
 
-# shadcn is the only supported LuCI theme.
-sed -i '/^CONFIG_PACKAGE_luci-theme-/d' ./.config
+# 主题由工作流的 WRT_THEME 决定（Settings.sh 已写入 luci-theme-$WRT_THEME），
+# 这里不再强制唯一主题，避免覆盖上游 VIKINGYFY 的主题选择。
 
 # =======================================================
 # [section: package-config] 按构建类型整理软件包配置
@@ -602,7 +609,6 @@ provided_config_lines=(
     "CONFIG_PACKAGE_luci-app-cifs-mount=y"
     "CONFIG_PACKAGE_kmod-fs-cifs=y"
     "CONFIG_PACKAGE_cifsmount=y"
-	"CONFIG_PACKAGE_luci-theme-shadcn=y"
     "CONFIG_PACKAGE_luci-app-openclash=y"
 )
 
@@ -837,12 +843,9 @@ echo "================================================================"
 
 
 # =======================================================
-# [section: filesystem-customization] 固件文件和主题定制
+# [section: filesystem-customization] 固件文件定制
 # =======================================================
-find ./ -name "cascade.css" -exec sed -i 's/#5e72e4/#31A1A1/g; s/#483d8b/#31A1A1/g' {} \;
-find ./ -name "dark.css" -exec sed -i 's/#5e72e4/#31A1A1/g; s/#483d8b/#31A1A1/g' {} \;
-find ./ -name "cascade.less" -exec sed -i 's/#5e72e4/#31A1A1/g; s/#483d8b/#31A1A1/g' {} \;
-find ./ -name "dark.less" -exec sed -i 's/#5e72e4/#31A1A1/g; s/#483d8b/#31A1A1/g' {} \;
+# 不再改写 cascade.css / dark.css 的主色，主题配色保持上游默认。
 
 install -Dm755 "${GITHUB_WORKSPACE}/Scripts/99_ttyd-nopass.sh" "package/base-files/files/etc/uci-defaults/99_ttyd-nopass"
 install -Dm755 "${GITHUB_WORKSPACE}/Scripts/98_zerotier_tailscale_coexist.sh" "package/base-files/files/etc/uci-defaults/98_zerotier_tailscale_coexist"
@@ -858,7 +861,9 @@ sed -i "/exit 0/i\\
 sed -ri \'/check_signature/s@^[^#]@#&@\' /etc/opkg.conf\n" "package/emortal/default-settings/files/99-default-settings"
 
 install -Dm755 "${GITHUB_WORKSPACE}/Scripts/99_dropbear_setup.sh" "package/base-files/files/etc/uci-defaults/99_dropbear_setup"
-install -Dm755 "${GITHUB_WORKSPACE}/Scripts/99_disable_firewall.sh" "package/base-files/files/etc/uci-defaults/99_disable_firewall"
+# 不要安装“首次启动关闭防火墙”的 uci-defaults：
+# fw4 一停，nat/masquerade 和 zone 转发规则全部消失，LAN/WiFi 下的客户端
+# 拿不到 NAT 就直接没网（路由器自己还能通）。防火墙必须保持启用。
 
 find ./ -name "getifaddr.c" -exec sed -i 's/return 1;/return 0;/g' {} \;
 
