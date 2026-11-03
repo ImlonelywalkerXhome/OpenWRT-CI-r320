@@ -1107,8 +1107,10 @@ if [[ "$WRT_CONFIG" == *"EBPF"* ]]; then
         echo "[ebpf] MTK-EBPF 仅启用 Honk，已移除 dae / luci-app-dae / luci-app-daed"
     fi
 
-    # 1. 拉取 Honk 完整 feed，保留仓库根目录供 SDK 工具链配置使用
+    # 1. 拉取 Honk 完整 feed 并作为 src-link 注册
     #    Honk 是 eBPF 透明代理引擎，只在 EBPF 固件启用。
+    #    使用 kenzok8/openwrt-honk：它直接分发预编译的 honk-core
+    #    （honk/Makefile 的 Build/Compile 为空），不需要 Rust/bpf-linker 工具链。
     HONK_FEED_DIR="package/openwrt-honk"
     rm -rf "$HONK_FEED_DIR"
     find feeds/ package/ -maxdepth 5 \
@@ -1117,14 +1119,15 @@ if [[ "$WRT_CONFIG" == *"EBPF"* ]]; then
         -exec rm -rf {} + 2>/dev/null
 
     if ! git clone --depth=1 --single-branch --branch main \
-        https://github.com/breeze303/openwrt-honk.git "$HONK_FEED_DIR"; then
+        https://github.com/kenzok8/openwrt-honk.git "$HONK_FEED_DIR"; then
         echo "[honk] 错误：clone openwrt-honk 失败"
         exit 1
     fi
 
     # OpenWrt 的 /var 通常是指向 /tmp 的运行时链接，不能在包 staging
-    # 阶段把它当普通目录合并。Honk 初始化脚本会在首次启动时创建
-    # /var/share/honk，因此这里只移除 Makefile 的预创建动作。
+    # 阶段把它当普通目录合并。源码编译版 Honk 会在首次启动时创建
+    # /var/share/honk，因此这里只移除 Makefile 的预创建动作；
+    # kenzok8 预编译版装到 /usr/share/honk，此段自动 no-op。
     HONK_MAKEFILE="$HONK_FEED_DIR/honk/Makefile"
     if [ -f "$HONK_MAKEFILE" ]; then
         # /var 是 OpenWrt staging 中的运行时链接，不能由包安装成目录。

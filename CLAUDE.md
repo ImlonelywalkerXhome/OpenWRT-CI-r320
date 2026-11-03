@@ -96,7 +96,7 @@ FIP / preloader 在独立仓库构建：<https://github.com/ysuolmai/UBOOT-CI>
 ### 相关文件
 | 文件 | 说明 |
 |------|------|
-| `Scripts/diy.sh` 末尾 `[dae]` 块 | 从 `ysuolmai/luci-app-dae` clone 包，IPQ60XX 还扩大 eMMC 内核分区（MTK 用 UBI dynamic volume 无需）|
+| `Scripts/diy.sh` 末尾 `[ebpf]` 块 | 从 `ysuolmai/luci-app-dae` clone 包；Honk feed 取自 `kenzok8/openwrt-honk`（分发预编译 `honk-core`，无需 Rust/bpf-linker）|
 | `Config/IPQ60XX-DAE-EMMC-WIFI-YES.txt` | QCA + DAE，含 WiFi（参考 IPQ60XX-EMMC-WIFI-YES 设备列表）|
 | `Config/IPQ60XX-DAE-EMMC-WIFI-NO.txt` | QCA + DAE，无 WiFi |
 | `Config/MTK-DAE-WIFI-YES.txt` | MTK filogic + DAE，含 WiFi（diy.sh 白名单过滤到 sx_7981r128 / nokia_ea0326gmp / cmcc_rax3000m）|
