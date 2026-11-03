@@ -1218,9 +1218,9 @@ PYEOF
     done
     echo "[honk] 已启用 honk + luci-app-honk"
 
-    # 2. 移除 openclash 和 passwall（eBPF/Honk 是唯一透明代理，避免冲突）
-    sed -i '/openclash/d; /passwall/d' .config
-    echo "[ebpf] 已从 .config 移除 openclash / passwall 相关行"
+    # # 2. 移除 openclash 和 passwall（eBPF/Honk 是唯一透明代理，避免冲突）
+    # sed -i '/openclash/d; /passwall/d' .config
+    # echo "[ebpf] 已从 .config 移除 openclash / passwall 相关行"
 
     # # 3. 扩大 eMMC 设备内核分区
     # #    eBPF 包含字节码，编译产物比普通代理大，默认 6144k 不够
