@@ -1124,76 +1124,15 @@ if [[ "$WRT_CONFIG" == *"EBPF"* ]]; then
         exit 1
     fi
 
-    # OpenWrt 的 /var 通常是指向 /tmp 的运行时链接，不能在包 staging
-    # 阶段把它当普通目录合并。源码编译版 Honk 会在首次启动时创建
-    # /var/share/honk，因此这里只移除 Makefile 的预创建动作；
-    # kenzok8 预编译版装到 /usr/share/honk，此段自动 no-op。
-    HONK_MAKEFILE="$HONK_FEED_DIR/honk/Makefile"
-    if [ -f "$HONK_MAKEFILE" ]; then
-        # /var 是 OpenWrt staging 中的运行时链接，不能由包安装成目录。
-        # 同时处理 INSTALL_DIR 与单独的 chmod 行，兼容上游换行或排版变化。
-        awk '
-            /^[[:space:]]*chmod[[:space:]]+0700[[:space:]]+\$\(1\)\/var\/share\/honk[[:space:]]*$/ { next }
-            {
-                gsub(/[[:space:]]+\$\(1\)\/var\/share\/honk/, "")
-                print
-            }
-        ' "$HONK_MAKEFILE" > "$HONK_MAKEFILE.new" && mv "$HONK_MAKEFILE.new" "$HONK_MAKEFILE"
-
-        if grep -qF '$(1)/var/share/honk' "$HONK_MAKEFILE"; then
-            echo "[honk] 错误：Makefile 仍会在 staging 阶段创建 /var/share/honk"
-            exit 1
-        fi
-        echo "[honk] 已移除 /var/share/honk 的 staging 预创建，改由 init 脚本运行时创建"
-    fi
-
-    # 旧版 Honk 通过 geo.lock.json 自己下载 Geo 资源；新版改为依赖
-    # OpenWrt 的 v2ray-geoip/v2ray-geosite 包，不再携带 geo.lock.json。
-    if [ -f "$HONK_FEED_DIR/locks/geo.lock.json" ]; then
-        mapfile -t HONK_GEO_ASSETS < <(
-            python3 - "$HONK_FEED_DIR/locks/geo.lock.json" <<'PYEOF'
-import json
-import sys
-
-with open(sys.argv[1], encoding="utf-8") as source:
-    lock = json.load(source)
-
-for asset in lock.get("assets", []):
-    print("\t".join((asset["cachePath"], asset["sourceUrl"], asset["sha256"])))
-PYEOF
-        )
-
-        if [ "${#HONK_GEO_ASSETS[@]}" -eq 0 ]; then
-            echo "[honk] 错误：geo.lock.json 未包含任何 Geo 资源"
-            exit 1
-        fi
-
-        for HONK_GEO_ASSET in "${HONK_GEO_ASSETS[@]}"; do
-            IFS=$'\t' read -r HONK_GEO_PATH HONK_GEO_URL HONK_GEO_SHA256 <<< "$HONK_GEO_ASSET"
-            HONK_GEO_FILE="$HONK_FEED_DIR/$HONK_GEO_PATH"
-            mkdir -p "$(dirname "$HONK_GEO_FILE")"
-
-            echo "[honk] 下载并校验 $(basename "$HONK_GEO_FILE")"
-            if ! curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
-                --output "$HONK_GEO_FILE" "$HONK_GEO_URL"; then
-                echo "[honk] 错误：下载 Geo 资源失败 $HONK_GEO_URL"
-                exit 1
-            fi
-            if ! printf '%s  %s\n' "$HONK_GEO_SHA256" "$HONK_GEO_FILE" | sha256sum -c -; then
-                echo "[honk] 错误：Geo 资源校验失败 $HONK_GEO_FILE"
-                exit 1
-            fi
-        done
-    elif [ -f "$HONK_FEED_DIR/honk/Makefile" ] && \
-         grep -qE 'v2ray-geoip|v2ray-geosite' "$HONK_FEED_DIR/honk/Makefile"; then
-        echo "[honk] 当前版本使用 OpenWrt 的 v2ray-geoip/v2ray-geosite，无需下载旧版 Geo 锁定资源"
-    else
-        echo "[honk] 错误：未找到 geo.lock.json 或新版 Geo feed 依赖"
+    # kenzok8 版直接复用 OpenWrt 的 v2ray-geoip / v2ray-geosite 提供 Geo 数据，
+    # 没有 geo.lock.json，也不会在 staging 阶段创建 /var/share/honk，
+    # 因此旧版需要的 Geo 资源下载和 /var 补丁都不再需要。
+    if ! grep -qE 'v2ray-geoip|v2ray-geosite' "$HONK_FEED_DIR/honk/Makefile"; then
+        echo "[honk] 错误：honk/Makefile 未声明 v2ray-geoip/v2ray-geosite 依赖"
         exit 1
     fi
 
-    # 按 Honk 官方 feed 方式安装包，保留完整 clone 供 WRT-CORE 读取
-    # BPF Rust/toolchain 锁定信息。
+    # 按 feed 方式注册并安装 honk / luci-app-honk。
     HONK_FEEDS_CONF=""
     if [ -f feeds.conf ]; then
         HONK_FEEDS_CONF="feeds.conf"

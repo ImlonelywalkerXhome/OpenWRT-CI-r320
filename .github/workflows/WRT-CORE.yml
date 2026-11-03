@@ -271,46 +271,6 @@ jobs:
 
           $GITHUB_WORKSPACE/.github/scripts/prepare-rust.sh
 
-      - name: Prepare eBPF Toolchain
-        if: ${{ !inputs.WRT_TEST && contains(inputs.WRT_CONFIG, 'EBPF') }}
-        run: |
-          cd ./wrt/
-
-          # kenzok8/openwrt-honk 直接分发预编译 honk-core（Build/Compile 为空），
-          # Makefile 里没有 BPF_RUST_TOOLCHAIN，也没有 build-packages-in-sdk.sh，
-          # 这种情况不需要安装 Rust 工具链和 bpf-linker。
-          HONK_BPF_RUST_TOOLCHAIN=$(sed -n 's/^BPF_RUST_TOOLCHAIN?=//p' package/openwrt-honk/honk/Makefile | head -n 1)
-          if [ -z "$HONK_BPF_RUST_TOOLCHAIN" ]; then
-            echo "openwrt-honk ships prebuilt honk-core; skipping eBPF toolchain setup"
-            exit 0
-          fi
-
-          HONK_BPF_LINKER_VERSION=$(sed -n 's/^readonly bpf_linker_version=.*:-\([^}]*\)}$/\1/p' package/openwrt-honk/.github/scripts/build-packages-in-sdk.sh | head -n 1)
-          HONK_BPF_LINKER_SHA256=$(sed -n 's/^readonly bpf_linker_sha256=.*:-\([^}]*\)}$/\1/p' package/openwrt-honk/.github/scripts/build-packages-in-sdk.sh | head -n 1)
-          if [ -z "$HONK_BPF_LINKER_VERSION" ] || [ -z "$HONK_BPF_LINKER_SHA256" ]; then
-            echo "Unable to read the eBPF tool versions from openwrt-honk"
-            exit 1
-          fi
-
-          export PATH="$HOME/.cargo/bin:$PATH"
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          rustup toolchain install "$HONK_BPF_RUST_TOOLCHAIN" --profile minimal --component rust-src
-
-          if ! command -v bpf-linker >/dev/null 2>&1 || \
-            ! bpf-linker --version | grep -q "$HONK_BPF_LINKER_VERSION"; then
-            HONK_BPF_LINKER_ARCHIVE=$(mktemp)
-            trap 'rm -f "$HONK_BPF_LINKER_ARCHIVE"' EXIT
-            curl --proto '=https' --tlsv1.2 --fail --silent --show-error \
-              --location --retry 5 --retry-all-errors --retry-delay 2 \
-              --output "$HONK_BPF_LINKER_ARCHIVE" \
-              "https://github.com/aya-rs/bpf-linker/releases/download/v${HONK_BPF_LINKER_VERSION}/bpf-linker-x86_64-unknown-linux-musl.tar.zst"
-            printf '%s  %s\n' "$HONK_BPF_LINKER_SHA256" "$HONK_BPF_LINKER_ARCHIVE" | sha256sum -c -
-            mkdir -p "$HOME/.cargo/bin"
-            tar --zstd -xf "$HONK_BPF_LINKER_ARCHIVE" -C "$HOME/.cargo/bin"
-            chmod +x "$HOME/.cargo/bin/bpf-linker"
-          fi
-          bpf-linker --version
-
       - name: Download Packages
         if: ${{ !inputs.WRT_TEST }}
         run: |
